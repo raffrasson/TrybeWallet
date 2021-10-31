@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
-// import { getExpense, getError,
-import { getCurrencies, getApi } from '../actions';
+import PropTypes from 'prop-types';
+import { getExpense, getApi } from '../actions';
 
 class ExpensesForm extends React.Component {
   constructor() {
@@ -9,16 +9,18 @@ class ExpensesForm extends React.Component {
     this.state = {
       value: '',
       currency: 'USD',
-      paymentMethod: 'Dinheiro',
+      method: 'Dinheiro',
       tag: 'Alimentação',
       description: '',
-      apiRates: [],
+      exchangeRates: {},
     };
     this.handleChange = this.handleChange.bind(this);
+    this.handleClick = this.handleClick.bind(this);
   }
 
   componentDidMount() {
-    this.fillCurrency();
+    const { getCurrencies } = this.props;
+    getCurrencies();
   }
 
   handleChange({ target }) {
@@ -27,33 +29,37 @@ class ExpensesForm extends React.Component {
     this.setState({ [name]: value });
   }
 
-  async fillCurrency() {
+  async handleClick() {
+    const { addExpense } = this.props;
     const fetchApi = await fetch('https://economia.awesomeapi.com.br/json/all');
     const response = await fetchApi.json();
     await delete response.USDT; // referência: https://stackoverflow.com/questions/1219630/remove-a-json-attribute
     this.setState({
-      apiRates: Object.keys(response),
+      exchangeRates: response,
+    }, () => {
+      const { description, currency, value,
+        method, tag, exchangeRates } = this.state;
+      addExpense({ description, currency, value, method, tag, exchangeRates });
     });
   }
 
   render() {
-    const { value, currency, paymentMethod, tag, description, apiRates } = this.state;
-    const paymentMethods = ['Dinheiro', 'Cartão de crédito', 'Cartão de débito'];
+    const methods = ['Dinheiro', 'Cartão de crédito', 'Cartão de débito'];
     const tags = ['Alimentação', 'Lazer', 'Trabalho', 'Transporte', 'Saúde'];
+    const { currencies } = this.props;
     return (
       <form>
         <label htmlFor="value">
           Valor:
-          {value}
           <input
             type="text"
             name="value"
             id="value"
+            onChange={ this.handleChange }
           />
         </label>
         <label htmlFor="describe">
           Descrição:
-          {description}
           <input
             type="text"
             name="description"
@@ -63,29 +69,26 @@ class ExpensesForm extends React.Component {
         </label>
         <label htmlFor="currency">
           Moeda:
-          {currency}
-          <select name="currency" id="currency">
-            {apiRates.map((currency) => (
-              <option key={ currency } value={ currency }>{ currency }</option>))}
+          <select name="currency" id="currency" onChange={ this.handleChange }>
+            {currencies.map((rate) => (
+              <option key={ rate } value={ rate }>{ rate }</option>))}
           </select>
         </label>
         <label htmlFor="paymentMethod">
           Método de pagamento:
-          <select name="paymentMethod" id="paymentMethod">
-            {paymentMethods.map((method, i) => (
+          <select name="method" id="paymentMethod" onChange={ this.handleChange }>
+            {methods.map((method, i) => (
               <option value={ method } key={ i }>{method}</option>))}
           </select>
         </label>
         <label htmlFor="tag">
           Tag:
-          <select name="tag" id="tag">
-            <option>Alimentação</option>
-            <option>Lazer</option>
-            <option>Trabalho</option>
-            <option>Transporte</option>
-            <option>Saúde</option>
+          <select name="tag" id="tag" onChange={ this.handleChange }>
+            {tags.map((tag) => (
+              <option key={ tag } value={ tag }>{ tag }</option>))}
           </select>
         </label>
+        <button type="button" onClick={ this.handleClick }>Adicionar despesa</button>
       </form>
     );
   }
@@ -94,7 +97,13 @@ class ExpensesForm extends React.Component {
 const mapStateToProps = (state) => ({ currencies: state.wallet.currencies });
 const mapDispatchToProps = (dispatch) => ({
   getCurrencies: () => dispatch(getApi()),
-  addRates: (state) => dispatch(getCurrencies(state)),
+  addExpense: (state) => dispatch(getExpense(state)),
 });
+
+ExpensesForm.propTypes = {
+  currencies: PropTypes.arrayOf(PropTypes.any).isRequired,
+  getCurrencies: PropTypes.func.isRequired,
+  addExpense: PropTypes.arrayOf(PropTypes.any).isRequired,
+};
 
 export default connect(mapStateToProps, mapDispatchToProps)(ExpensesForm);
