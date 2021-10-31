@@ -1,6 +1,7 @@
 export const INPUT_EMAIL = 'INPUT_EMAIL';
 export const GET_CURRENCIES = 'GET_CURRENCIES';
 export const GET_EXPENSE = 'GET_EXPENSE';
+export const DELETE_EXPENSE = 'DELETE_EXPENSE';
 export const ERROR = 'ERROR';
 
 export const inputEmail = (payload) => (
@@ -23,6 +24,11 @@ export const error = (payload) => (
   {
     type: ERROR, payload,
   });
+
+export const deleteExpense = (id) => ({
+  type: DELETE_EXPENSE,
+  payload: id,
+});
 
 export const getApi = () => async (dispacth) => {
   try {
