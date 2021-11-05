@@ -11,8 +11,16 @@ class Header extends React.Component {
   }
 
   render() {
-    const { email, total } = this.props;
+    const { email, wallet: { expenses } } = this.props;
     const { currency } = this.state;
+    const totalExpenses = expenses.reduce((total, expense) => {
+      const valueBRL = Math.round(Number(expense.value)
+        * Number(expense.exchangeRates[expense.currency].ask) * 100) / 100;
+
+      total += valueBRL;
+      return total;
+    }, 0);
+
     return (
       <section>
         <div data-testid="email-field">
@@ -21,7 +29,7 @@ class Header extends React.Component {
         </div>
         <div data-testid="total-field">
           <span>Total:</span>
-          {total}
+          {totalExpenses.toFixed(2)}
         </div>
         <div data-testid="header-currency-field">
           <span>Currency:</span>
@@ -34,13 +42,12 @@ class Header extends React.Component {
 
 const mapStateToProps = (state) => ({
   email: state.user.email,
-  total: state.wallet.expenses.reduce((total, { value, currency, exchangeRates }) => total
-  + value * exchangeRates[currency].ask, 0),
+  wallet: state.wallet,
 });
 
 Header.propTypes = {
   email: PropTypes.string.isRequired,
-  total: PropTypes.number.isRequired,
+  wallet: PropTypes.objectOf(PropTypes.any).isRequired,
 };
 
 export default connect(mapStateToProps, null)(Header);
